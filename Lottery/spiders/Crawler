@@ -1,0 +1,29 @@
+from twisted.internet import reactor, defer
+from scrapy.crawler import CrawlerRunner
+from scrapy.utils.log import configure_logging
+from scrapy import spiderloader
+from scrapy.utils import project
+from twisted.internet.defer import inlineCallbacks
+
+configure_logging()
+runner = CrawlerRunner(project.get_project_settings())
+
+@defer.inlineCallbacks
+def crawl():
+    spider_list = ['EuroHotpicks', 'LottoHotpicks']
+    settings = project.get_project_settings()
+    spider_loader = spiderloader.SpiderLoader.from_settings(settings)
+    spiders = spider_loader.list()
+    classes = [spider_loader.load(name) for name in spiders]
+    for my_spider in classes:
+        if my_spider.name not in spider_list:
+            print("\n\nRunning spider %s\n\n" % (my_spider.name))
+            yield runner.crawl(my_spider)
+    for my_spider in classes:
+        if my_spider.name  in spider_list:
+            print("\n\nRunning spider %s\n\n" % (my_spider.name))
+            yield runner.crawl(my_spider)
+    reactor.stop()
+
+crawl()
+reactor.run()
